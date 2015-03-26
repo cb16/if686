@@ -1,3 +1,5 @@
+--TRABALHO entregue no dia 24
+
 --mergesort
 
 mergesort :: [Int] -> [Int] -- método que usa Take e Drop - não sei se pode usar :T
@@ -103,3 +105,82 @@ ord list | list == [] = []
 
 ordenar :: [Int] -> [Int]
 ordenar list = (convertToInt (ord (convertoToString list)))
+
+--QUESTÕES DA AULA DO DIA 24:
+
+--menorMaior
+maior :: Int -> Int -> Int
+maior x y | x > y = x
+		  | otherwise = y
+
+menor :: Int -> Int -> Int
+menor x y | x < y = x
+		  | otherwise = y
+
+menorMaior :: Int -> Int -> Int -> (Int, Int)
+menorMaior a b c = ((menor a (menor b c)),(maior a (maior b c)))
+
+--OrdenaTripla
+meio :: Int -> Int -> Int -> Int
+meio a b c | (maior a (maior b c)) == a && (menor a (menor b c)) == b = c
+		   | (maior a (maior b c)) == b && (menor a (menor b c)) == a = c
+		   | (maior a (maior b c)) == a && (menor a (menor b c)) == c = b
+		   | (maior a (maior b c)) == c && (menor a (menor b c)) == a = b
+		   | (maior a (maior b c)) == b && (menor a (menor b c)) == c = a
+		   | otherwise = a
+
+ordenaTripla :: (Int, Int, Int) -> (Int, Int, Int)
+ordenaTripla (a,b,c) = ((menor a (menor b c)), (meio a b c) ,(maior a (maior b c)))
+
+--exercícios com reta
+type Ponto  = (Float, Float)
+type Reta = (Ponto, Ponto)
+
+cordPonto1 :: Ponto -> Float
+cordPonto1 (x,y) = x
+
+cordPonto2 :: Ponto -> Float
+cordPonto2 (x,y) = y
+
+vertical :: Reta -> Bool
+vertical ((x1,y1), (x2,y2)) = x1==x2
+
+pontoY :: Float -> Reta -> Float
+pontoY a ((x1,y1), (x2,y2)) | x1==x2 = 0
+							| otherwise = (d*e)/b - y1
+							  where 
+							  d = y2-y1
+							  e = a-x1
+							  b = x2-x1
+
+--compreensão:
+
+membro :: [Int] -> Int -> Bool
+membro list num  = ([True| at <- list, at == num]) /= []
+
+type Pessoa = String
+type Livro = String
+type BancoDados = [(Pessoa, Livro)]
+
+baseExemplo :: BancoDados
+
+baseExemplo = [("Sergio","O Senhor dos Aneis"),("Andre","Duna"),("Fernando","Jonathan Strange & Mr. Norrell"), ("Fernando","A Game of Thrones")]
+
+livros :: BancoDados -> Pessoa -> [Livro]
+livros banco pe = [snd x | x <- banco, (fst x == pe)]
+
+emprestimos :: BancoDados -> Livro -> [Pessoa]
+emprestimos banco liv = [fst x | x <- banco, (snd x == liv)]
+
+emprestado :: BancoDados -> Livro -> Bool
+emprestado banco liv = [True| x <- banco, snd x == liv] /= []
+
+qtdEmprestimos :: BancoDados -> Pessoa -> Int
+qtdEmprestimos banco pe = length [x | x <- banco, fst x == pe]
+
+devolver :: BancoDados -> Pessoa -> Livro -> BancoDados
+devolver banco pe liv = [x | x <- banco, ((fst x /= pe) && (snd x /= liv))]
+
+quicksort :: [Int] -> [Int]
+quicksort [] = []
+quicksort list = quicksort([x | x<-(tail list), x<=(head list)]) ++ ([head list] ++ quicksort([x | x<-(tail list), x>(head list)]))
