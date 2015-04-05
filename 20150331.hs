@@ -99,3 +99,118 @@ getMediana list = head (drop (div (length list) 2) (quicksort list))
 
 --filtroMediana [[Int]] -> Int -> [[Int]]
 
+--QUESTÕES DA AULA PRÁTICA 31/03/2015
+
+--Questão 1:
+
+type Tr = ((Int, Int), Char)
+
+-- afd "111" [1,2,3] [((1,1),'1'), ((1,3), '0'), ((3,2), '1')] 1 [2]
+
+afd :: String -> [Int] -> [Tr] -> Int -> [Int] -> Bool
+afd word states trans ini aceit = search word states trans ini aceit ini
+
+search :: String -> [Int] -> [Tr] -> Int -> [Int] -> Int -> Bool
+search word states trans ini aceit at | word == [] && (member aceit at) = True
+								   | word == [] = False
+								   | otherwise = search (drop 1 word) states trans ini aceit (findNext trans at (head word))
+
+findNext :: [Tr] -> Int -> Char -> Int
+findNext trans at c | fst(fst(head trans)) == at && snd(head trans)==c = snd(fst(head trans))
+					| otherwise = findNext (drop 1 trans) at c
+
+member :: [Int] -> Int -> Bool
+member (a:as) at | as == [] = a==at
+				 | a==at = True
+				 | otherwise = False || (member as at)
+
+--Questão 2:
+
+convBack :: Int -> Char
+convBack n | n == 1 = '1'
+		   | n == 2 = '2'
+		   | n == 3 = '3'
+		   | n == 4 = '4'
+		   | n == 5 = '5'
+		   | n == 6 = '6'
+		   | n == 7 = '7'
+		   | n == 8 = '8'
+		   | n == 9 = '9'
+		   | n == 10 = 'A'
+		   | n == 11 = 'B'
+		   | n == 12 = 'C'
+		   | n == 13 = 'D'
+		   | n == 14 = 'E'
+		   | n == 15 = 'F'
+		   | otherwise = '0'
+
+soma :: [String] -> Int
+soma (a:as) | as == [] = hexToDec a (length a) 0
+			| otherwise = (hexToDec a (length a) 0) + (soma as)
+
+toHex :: Int -> String
+toHex num | num < 16 = [convBack num]
+		  | otherwise = (toHex (div num 16)) ++ [convBack (mod num 16)]
+
+somatorio :: [String] -> String
+somatorio list = toHex (soma list)
+
+--Questão 3:
+
+conv :: Char -> Int
+conv c | c=='1'=1
+	   | c=='2'=2
+	   | c=='3'=3
+	   | c=='4'=4
+	   | c=='5'=5
+	   | c=='6'=6
+	   | c=='7'=7
+	   | c=='8'=8
+	   | c=='9'=9
+	   | c=='A'=10
+	   | c=='B'=11
+	   | c=='C'=12
+	   | c=='D'=13
+	   | c=='E'=14
+	   | c=='F'=15
+	   | otherwise = 0
+
+hexToDec :: String -> Int -> Int -> Int
+hexToDec num at s | num == [] = s
+				  | otherwise = hexToDec (drop 1 num) (at-1) (s + ((conv (head num)) * (16 ^ (at-1))))
+
+myRev :: String -> String
+myRev (a:as) | as == [] = [a]
+		   	 | otherwise = (myRev as) ++ [a]
+
+isPalin :: String -> String -> Bool
+isPalin (a:as) (b:bs) | as == [] && bs == [] = a==b
+					  | as==[] || bs==[] = True
+					  | otherwise = (a==b) && (isPalin as bs)
+
+fun :: String -> String
+fun word | isPalin (take  (div (length (show (hexToDec word (length word) 0))) 2) (show (hexToDec word (length word) 0))) (myRev (drop (div (length (show (hexToDec word (length word) 0))) 2) (show (hexToDec word (length word) 0)))) = (show (hexToDec word (length word) 0)) ++ " - PALINDROMO"
+		 | otherwise = (show (hexToDec word (length word) 0)) ++ " - NAO-PALINDROMO"
+
+--Questão 4:
+
+type Vector = [Double]
+type Matrix = [Vector]
+
+getValue :: Vector -> Vector -> Double
+getValue (a:as) (b:bs) | as == [] = a*b
+					   | otherwise = a*b + (getValue as bs)
+
+elim :: Matrix -> Matrix
+elim mat = [ drop 1 a | a <- mat]
+
+getFirst :: Matrix -> Vector
+getFirst mat | mat == [] = []
+			 | otherwise = (head (head mat)) : (getFirst (drop 1 mat))
+
+transpose1 :: Matrix -> Matrix
+transpose1 mat | (head mat) == [] = []
+			   | otherwise = (getFirst mat) : (transpose1 (elim mat))
+
+mult :: Matrix -> Matrix -> Matrix
+mult m1 m2  = [ [getValue a b | b <- (transpose1 m2)] | a <- m1]
