@@ -1,100 +1,158 @@
---- foldr ((+).(.).map) ---
+-- a) foldr (+).(.).map == (foldr (+)).((.).map)
 
-map => (x -> y) -> [x] -> [y]
-inputMap = (x -> y)
-outputMap = [x] -> [y]
+* (.).map
 
-(.) => (b -> c) -> (a -> b) -> a -> c
-inputComp = (b -> c)
-OutputComp = (a -> b) -> a -> c
+map :: (a -> b) -> [a] -> [b]
+in1: (a -> b)
+out1: [a] -> [b]
 
-(+) => Num z => z -> z -> z
-inputSoma = z
-OutputSoma = z -> z
+(.) :: (e -> f) -> (d -> e) -> d -> f
+in2: (e -> f)
+out2: (d -> e) -> d -> f
 
-outputMap = inputComp
-[x] -> [y] = (b -> c)
-b = [x]
-c = [y]
 
-inputMap -> OutputComp
-(x -> y) -> (a -> b) -> a -> c
-Substituindo:
-(.).map :: (x -> y) -> (a -> [x]) -> a -> [y]
+out1 = in2
+[a] -> [b] = (e -> f)
+[a] = e
+[b] = f
 
-agora:
-InputCompMap = (x -> y)
-OutputCompMap = (a -> [x]) -> a -> [y]
+in1 -> out2
+(a -> b) -> (d -> e) -> d -> f
+(a -> b) -> (d -> [a]) -> d -> [b]
 
-então, temos que:
-OutputCompMap = inputSoma
-(a -> [x]) -> a -> [y] = z
+(.).map :: (a -> b) -> (d -> [a]) -> d -> [b]
 
-InputCompMap -> OutputSoma
-(x -> y) -> z -> z
-mas podemos substituir z
-(x -> y) -> (a -> [x]) -> a -> [y] -> (a -> [x]) -> a -> [y]
+* foldr (+)
 
-agora, vamos para o foldr
-foldr :: (t -> r -> r) -> r -> [t] -> r
-t = (x -> y)
-r = ((a -> [x]) -> a -> [y])
+foldr :: (s -> z -> z) -> z -> [s] -> z
+in1: (s -> z -> z)
+out1: z -> [s] -> z
 
-então, vamos substituir:
-foldr ((+).(.).map) :: Num ((a -> [x]) -> a -> [y]) => ((a -> [x]) -> a -> [y]) -> [(x -> y)] -> ((a -> [x]) -> a -> [y])
+(+) :: Num x => x -> x -> x
 
---- (\x y z -> foldr z x y).map ---
+in1 = (+)
+(s -> z -> z) = (x -> x -> x)
+s = x
+z = x
 
-foldr :: (t -> r -> r) -> r -> [t] -> r
-(\x y z -> foldr z x y)
-x = r
-y = [t]
-z = (t -> r -> r)
-foldr :: r -> [t] -> (t -> r -> r) -> r
-InputFoldr = r
-OutputFoldr = [t] -> (t -> r -> r) -> r
+foldr (+) -> x -> [x] -> x
 
-map :: (x -> y) -> [x] -> [y]
-inputMap = (x -> y)
-outputMap = [x] -> [y]
 
-OutputMap = InputFoldr
-([x] -> [y]) = r
+* (foldr (+)).((.).map)
 
-inputMap -> OutputFoldr
-(x -> y) -> [t] -> (t -> ([x] -> [y]) -> ([x] -> [y])) -> ([x] -> [y])
+(.).map :: (a -> b) -> (d -> [a]) -> d -> [b]
+in1: (a -> b)
+out1: (d -> [a]) -> d -> [b]
 
---- map.((.) (foldr (++) (foldr (++) [] [[1], [2]]))) ---
+foldr (+) -> x -> [x] -> x
+in2: x
+out2: [x] -> x
 
-map.((.) (foldr (++) (foldr (++) [] [[1], [2]]) ) )
 
-foldr (++) [] [[1], [2]] :: Num f => [f]
+out1 = in2
+((d -> [a]) -> d -> [b]) = x
 
-foldr (++) (foldr (++) [] [[1], [2]]) :: Num f => [[f]] -> [f]
+in1 -> out2
+(a -> b) -> [x] -> x
+(a -> b) -> [((d -> [a]) -> d -> [b])] -> ((d -> [a]) -> d -> [b])
 
-(.) :: (b -> c) -> (a -> b) -> a -> c
-e temos que:
+
+-- b) (\x y z -> foldr z x y).map
+
+map :: (a -> b) -> [a] -> [b]
+in1: (a -> b)
+out1: [a] -> [b]
+
+foldr :: (m -> n -> n) -> n -> [m] -> n
+(\x y z) :: n -> [m] -> (m -> n -> n) -> n
+in2: n
+out2: [m] -> (m -> n -> n) -> n
+
+
+in2 = out1
+n = ([a] -> [b])
+
+in1 -> out2
+(a -> b) -> [m] -> (m -> n -> n) -> n
+(a -> b) -> [m] -> (m -> ([a] -> [b]) -> [a] -> [b]) -> [a] -> [b]
+
+(\x y z -> foldr z x y).map :: (a -> b) -> [m] -> (m -> ([a] -> [b]) -> [a] -> [b]) -> [a] -> [b]
+
+
+-- c) map.((.) (foldr (++) (foldr (++) [] [[1], [2]])))
+
+foldr (++) [] [[1], [2]] :: Num a => [a]
+
+foldr (++) (foldr (++) [] [[1], [2]]) :: Num a => [[a]] -> [a]
+
+(.) :: (e -> f) -> (d -> e) -> d -> f
+in: (e -> f)
+out: (d -> e) -> d -> f
+
+in = foldr (++) (foldr (++) [] [[1], [2]])
+(e -> f) = [[a]] -> [a]
+e = [[a]]
+f = [a]
+
 (.) (foldr (++) (foldr (++) [] [[1], [2]])) 
-em que (b -> c) = [[f]] -> [f]
-pois é a primeira função aplicada na composição.
-logo:
-b = [[f]]
-c = [f]
-InputCompFold = (a -> [[f]])
-OutputCompFold = a -> [f]
+in1: (d -> e) = (d -> [[a]])
+out1: (d -> f) = (d -> [a])
 
 map :: (x -> y) -> [x] -> [y]
-inputMap = (x -> y)
-outputMap = [x] -> [y]
+in2: (x -> y)
+out2: [x] -> [y]
 
-OutputCompFold = InputMap
-a -> [f] = (x -> y)
-x = a
-y = [f]
+* map.((.) (foldr (++) (foldr (++) [] [[1], [2]])))
 
-InputCompFold -> Output
-(a -> [[f]]) -> [x] -> [y]
-substituindo:
-(a -> [[f]]) -> [a] -> [[f]]
-concluindo:
-map.((.) (foldr (++) (foldr (++) [] [[1], [2]]) ) ) :: Num f => (a -> [[f]]) -> [a] -> [[f]]
+out1 = in2
+(d -> [a]) = (x -> y)
+x = d
+y = [a]
+
+in1 -> out2
+(d -> [[a]]) -> [d] -> [[a]]
+
+
+map.((.) (foldr (++) (foldr (++) [] [[1], [2]]))) :: (Num a) => (d -> [[a]]) -> [d] -> [[a]]
+
+
+-- d) (foldr).(.)$(!!)
+
+* (foldr).(.)
+
+(.) :: (e -> f) -> (d -> e) -> d -> f
+in1: (e -> f)
+out1: (d -> e) -> d -> f
+
+foldr :: (s -> z -> z) -> z -> [s] -> z
+in2: (s -> z -> z)
+out2: z -> [s] -> z
+
+out1 = in2
+(d -> e) -> d -> f = (s -> z -> z)
+s = (d -> e)
+z = d
+z = f
+(d = f)
+
+in1 -> out2
+(e -> f) -> z -> [s] -> z
+(e -> f) -> f -> [f -> e] -> f
+
+(foldr).(.) :: (e -> f) -> f -> [f -> e] -> f
+
+* (foldr).(.)$(!!)
+
+(!!) :: [a] -> Int -> a
+
+(foldr).(.) :: (e -> f) -> f -> [f -> e] -> f
+in: (e -> f)
+out: f -> [f -> e] -> f
+
+in = (!!)
+(e -> f) = [a] -> (Int -> a)
+e = [a]
+f = (Int -> a)
+
+
+(foldr).(.)$(!!) :: (Int -> a) -> [(Int -> a) -> [a]] -> Int -> a
