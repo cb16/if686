@@ -1,3 +1,5 @@
+import Data.Char;
+
 --Questão 1--
 
 type Table = [(Int, Int)]
@@ -40,23 +42,44 @@ main1 table = do {
 	return v15; -- resultado esperado: Just [(6,7), (7,8), (8,9), (9,10), (10,11)]
 }
 
---------------
+-- Questão 2 --
 
-{-looking :: String -> Bool
-looking [] = True
-looking (a:as) | (a>='a' && a <= 'z' ) || (a>='A' && a <= 'Z') || a==' ' = looking as
-			   | otherwise = False
+--getLine :: IO String
 
-check :: Maybe String -> Maybe String
-check [] = Nothing
-check (a:as) | looking (a:as) = Just (a:as)
-			 | otherwise = Nothing
+--putStr :: String -> IO ()
 
-main2 :: IO ()
-main2 = do {
-	entrada <- getLine;
-	validado <- check (Just entrada);
-	--putStrLn validado;
-	--return validado;
-	putStr validado;
--}
+--getChar :: IO Char
+
+notLetter :: Char -> Bool
+notLetter c = (c>='a' && c<='z') || (c>='A' && c<='Z') || c==' '
+
+allLetter :: String -> Bool
+allLetter [] = True
+allLetter (a:as) = (notLetter a) && (allLetter as)
+
+test :: String -> Maybe String
+test [] = Nothing
+test (a:as) | allLetter (a:as) = Just (a:as)
+		    | otherwise = Nothing
+
+maiuscula :: Maybe String -> Maybe String
+maiuscula Nothing = Nothing
+maiuscula (Just word@(a:as)) = Just [toUpper c | c <- word]
+
+help :: String -> String
+help [] = []
+help (a:as) | a==' ' = ('\n'):(help as)
+			| otherwise = a:(help as)
+
+try :: Maybe String -> String
+try Nothing = ""
+try (Just word) = help word
+
+main :: IO ()
+main = do {
+	str <- getLine;
+	toPrint <- return (test str);
+	word <- return (maiuscula toPrint);
+	list <- return (try word);
+	putStrLn list;
+}
