@@ -141,6 +141,7 @@ environment =
           $ insert "/"              (Native division)
           $ insert "mod"            (Native modulo)
           $ insert "comment"        (Native comment)
+          $ insert "cons"           (Native cons)
             empty
 
 type StateT = Map String LispVal
@@ -292,6 +293,18 @@ modulo a = Error "Invalid parameters!"
 
 comment :: [LispVal] -> LispVal
 comment list = List []
+
+isList :: LispVal -> Bool
+isList (List a) = True
+isList a = False
+
+unpackList :: LispVal -> [LispVal]
+unpackList (List list) = list
+
+cons :: [LispVal] -> LispVal
+cons par@(a:list:[]) | (isList list) = List ([a] ++ (unpackList list))
+                     | otherwise = Error "Invalid parameters!"
+cons a = Error "Invaled parameters!"
 -----------------------------------------------------------
 --                     main FUNCTION                     --
 -----------------------------------------------------------
