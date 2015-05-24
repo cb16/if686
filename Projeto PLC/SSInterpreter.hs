@@ -84,6 +84,7 @@ define :: StateT -> [LispVal] -> StateTransformer LispVal
 define env [(Atom id), val] = defineVar env id val
 define env [(List [Atom id]), val] = defineVar env id val
 -- define env [(List l), val]                                       
+define env [List ((Atom id):formals), body] = eval env (List (Atom "define":(Atom id):[(List (Atom "lambda":(List formals):body:[]))]))
 define env args = return (Error "wrong number of arguments")
 defineVar env id val = 
   ST (\s -> let (ST f)    = eval env val
