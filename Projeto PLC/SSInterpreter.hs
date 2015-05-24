@@ -137,7 +137,10 @@ environment =
           $ insert "<"              (Native less)
           $ insert ">="             (Native greaterOrEquals)
           $ insert "<="             (Native lessOrEquals)
-          --$ insert "eq?"             (Native lessOrEquals)
+          $ insert "It?"            (Native it)
+          $ insert "/"              (Native division)
+          $ insert "mod"            (Native modulo)
+          $ insert "comment"        (Native comment)
             empty
 
 type StateT = Map String LispVal
@@ -245,27 +248,50 @@ equals list@(f:s:[]) | (onlyBools list) = (Bool ((unpackBool f) == (unpackBool s
                      | (onlyNumbers list) = (Bool ((unpackNum f) == (unpackNum s)))
                      | (onlyStrings list) = (Bool ((unpackString f) == (unpackString s)))
                      | otherwise = Error "Invalid parameters!"
+equals a = Error "Invalid parameters!"
 
 greater :: [LispVal] -> LispVal
 greater list@(f:s:[]) | (onlyNumbers list) = (Bool ((unpackNum f) > (unpackNum s)))
                       | (onlyStrings list) = (Bool ((unpackString f) > (unpackString s)))
                       | otherwise = Error "Invalid parameters!"
+greater a = Error "Invalid parameters!"
 
 less :: [LispVal] -> LispVal
 less list@(f:s:[]) | (onlyNumbers list) = (Bool ((unpackNum f) < (unpackNum s)))
                    | (onlyStrings list) = (Bool ((unpackString f) < (unpackString s)))
                    | otherwise = Error "Invalid parameters!"
+less a = Error "Invalid parameters!"
 
 greaterOrEquals :: [LispVal] -> LispVal
 greaterOrEquals list@(f:s:[]) | (onlyNumbers list) = (Bool ((unpackNum f) >= (unpackNum s)))
                               | (onlyStrings list) = (Bool ((unpackString f) >= (unpackString s)))
                               | otherwise = Error "Invalid parameters!"
+greaterOrEquals a = Error "Invalid parameters!"
 
 lessOrEquals :: [LispVal] -> LispVal
 lessOrEquals list@(f:s:[]) | (onlyNumbers list) = (Bool ((unpackNum f) <= (unpackNum s)))
                            | (onlyStrings list) = (Bool ((unpackString f) <= (unpackString s)))
                            | otherwise = Error "Invalid parameters!"
+lessOrEquals a = Error "Invalid parameters!"
 
+it :: [LispVal] -> LispVal
+it list@(f:s:[]) | (onlyNumbers list) = (Bool ((unpackNum f) < (unpackNum s)))
+                 | otherwise = Error "Invalid parameters!"
+it a = Error "Invalid parameters!"
+
+division :: [LispVal] -> LispVal
+division list@(f:s:[]) | (onlyNumbers list) && ((unpackNum s) /= 0) = Number ((unpackNum f) `div` (unpackNum s))
+                       | (onlyNumbers list) = Error "Can't divide by zero!"
+                       | otherwise = Error "Invalid parameters!"
+division a = Error "Invalid parameters!"
+
+modulo :: [LispVal] -> LispVal
+modulo list@(f:s:[]) | (onlyNumbers list) = Number ((unpackNum f) `mod` (unpackNum s))
+                     | otherwise = Error "Invalid parameters!"
+modulo a = Error "Invalid parameters!"
+
+comment :: [LispVal] -> LispVal
+comment list = List []
 -----------------------------------------------------------
 --                     main FUNCTION                     --
 -----------------------------------------------------------
