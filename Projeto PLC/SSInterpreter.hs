@@ -321,7 +321,7 @@ eqv list@((List []):(List []):[]) = Bool True
 eqv list@((String a):(String b):[]) = Bool (a==b)
 eqv list@((Number a):(Number b):[]) = Bool (a==b)
 eqv list@((List a):(List b):[]) = (compareList a b)
---continue
+eqv list@((DottedList as a):(DottedList bs b):[]) = (Bool ((unpackBool (compareList as bs)) && (unpackBool (equals ([a]++[b])))))
 eqv a = Error "Invalid parameters!"
 -----------------------------------------------------------
 --                     main FUNCTION                     --
