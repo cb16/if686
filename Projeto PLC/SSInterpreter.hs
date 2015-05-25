@@ -143,6 +143,7 @@ environment =
           $ insert "mod"            (Native modulo)
           $ insert "comment"        (Native comment)
           $ insert "cons"           (Native cons)
+          $ insert "eqv?"           (Native eqv)
             empty
 
 type StateT = Map String LispVal
@@ -305,7 +306,23 @@ unpackList (List list) = list
 cons :: [LispVal] -> LispVal
 cons par@(a:list:[]) | (isList list) = List ([a] ++ (unpackList list))
                      | otherwise = Error "Invalid parameters!"
-cons a = Error "Invaled parameters!"
+cons a = Error "Invalid parameters!"
+
+compareList :: [LispVal] -> [LispVal] -> LispVal
+compareList [] [] = (Bool True)
+compareList [] (b:bs) = (Bool False)
+compareList (b:bs) [] = (Bool False)
+compareList (a:as) (b:bs) | (unpackBool (equals ([a]++[b]))) = (compareList as bs)
+                          | otherwise = (Bool False)
+
+eqv :: [LispVal] -> LispVal
+eqv list@((Bool a):(Bool b):[]) = Bool (a==b)
+eqv list@((List []):(List []):[]) = Bool True
+eqv list@((String a):(String b):[]) = Bool (a==b)
+eqv list@((Number a):(Number b):[]) = Bool (a==b)
+eqv list@((List a):(List b):[]) = (compareList a b)
+--continue
+eqv a = Error "Invalid parameters!"
 -----------------------------------------------------------
 --                     main FUNCTION                     --
 -----------------------------------------------------------

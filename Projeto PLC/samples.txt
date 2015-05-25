@@ -13,3 +13,5 @@
 "(begin (define f (lambda (a) (if (== a 10) a (f (+ a 1))))) (f 1))"
 "(begin (define (f a) (if (== a 10) a (f (+ a 1)))))"
 "(begin (define (f a) (if (== a 0) 1 (* a (f (- a 1))))) (f 5))"
+"(begin (eqv? 2 3))"
+"(begin (eqv? '(2 3) '(2 3)))"
