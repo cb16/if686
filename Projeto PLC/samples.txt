@@ -16,3 +16,4 @@
 "(begin (eqv? 2 3))"
 "(begin (eqv? '(2 3) '(2 3)))"
 "(begin (eqv? '(2 3 . 5)  '(2 3 . 6)))"
+"(begin (define x 12) (set! x (+ x 1)))"

@@ -56,8 +56,9 @@ eval env iff@(List (Atom "if":condition:consequent:alternate:[])) =
       erro@(Error msg) -> return erro
       otherwise -> return (Error "Not a boolean expression!"))
 eval env lam@(List (Atom "lambda":(List formals):body:[])) = return lam
+eval env stuff@(List (Atom "set!":(Atom variable):(a):[])) = (stateLookup env variable) >>= (\v -> case v of { (error@(Error _)) -> return error; otherwise -> (define env ([Atom variable]++[a])) })
 -- The following line is slightly more complex because we are addressing the
--- case where define is redefined by the user (whatever is the user's reason
+-- case where define is redefined by the user (whatever is the user's reason 
 -- for doing so. The problem is that redefining define does not have
 -- the same semantics as redefining other functions, since define is not
 -- stored as a regular function because of its return type.
@@ -82,8 +83,7 @@ stateLookup env var = ST $
 -- beast.
 define :: StateT -> [LispVal] -> StateTransformer LispVal
 define env [(Atom id), val] = defineVar env id val
-define env [(List [Atom id]), val] = defineVar env id val
--- define env [(List l), val]                                       
+define env [(List [Atom id]), val] = defineVar env id val 
 define env [List ((Atom id):formals), body] = eval env (List (Atom "define":(Atom id):[(List (Atom "lambda":(List formals):body:[]))]))
 define env args = return (Error "wrong number of arguments")
 defineVar env id val = 
@@ -323,6 +323,7 @@ eqv list@((Number a):(Number b):[]) = Bool (a==b)
 eqv list@((List a):(List b):[]) = (compareList a b)
 eqv list@((DottedList as a):(DottedList bs b):[]) = (Bool ((unpackBool (compareList as bs)) && (unpackBool (equals ([a]++[b])))))
 eqv a = Error "Invalid parameters!"
+
 -----------------------------------------------------------
 --                     main FUNCTION                     --
 -----------------------------------------------------------
