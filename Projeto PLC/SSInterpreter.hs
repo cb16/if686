@@ -57,6 +57,7 @@ eval env iff@(List (Atom "if":condition:consequent:alternate:[])) =
       otherwise -> return (Error "Not a boolean expression!"))
 eval env lam@(List (Atom "lambda":(List formals):body:[])) = return lam
 eval env stuff@(List (Atom "set!":(Atom variable):(a):[])) = (stateLookup env variable) >>= (\v -> case v of { (error@(Error _)) -> return error; otherwise -> (define env ([Atom variable]++[a])) })
+eval env letFunction@(List (Atom "let":(List bindings):body:[])) = lett env [letFunction]
 -- The following line is slightly more complex because we are addressing the
 -- case where define is redefined by the user (whatever is the user's reason 
 -- for doing so. The problem is that redefining define does not have
@@ -91,6 +92,27 @@ defineVar env id val =
                 (result, newState) = f s
             in (result, (insert id result newState))
      )
+
+
+lett :: StateT -> [LispVal] -> StateTransformer LispVal
+lett env [(List (Atom "let": (List(definitions)): body:[]))] = 
+  (defineLet env definitions) >> (eval env body)
+              >>= (\v -> case v of { (error@(Error _)) -> return error; otherwise -> (deleteLet env definitions v) })
+
+defineLet :: StateT -> [LispVal] -> StateTransformer LispVal
+defineLet env [(List ([(Atom id), val]))] = defineVar env id val
+defineLet env ((List ([(Atom id), val])):as) = (defineVar env id val) >> (defineLet env as)
+defineLet env a = return (Error "Invalid parameters!")
+
+deleteLet :: StateT -> [LispVal] -> LispVal -> StateTransformer LispVal
+deleteLet env [(List ([(Atom id), val]))] st = deleteVar env id st
+deleteLet env ((List ([(Atom id), val])):as) st = (deleteVar env id st) >> (deleteLet env as st)
+deleteLet env a st = return (Error "Invalid parameters!")
+deleteVar env id st =
+  ST (\s -> let (ST f)    = eval env st
+                (result, newState) = f s
+            in (result, (delete id newState))
+     )  
 
 
 -- The maybe function yields a value of type b if the evaluation of 
