@@ -83,21 +83,28 @@ stateLookup env var = ST $
 -- not talking about local definitions. That's a completely different
 -- beast.
 define :: StateT -> [LispVal] -> StateTransformer LispVal
+define env [(Atom id), (List ([(Atom "make-closure"), (List (Atom "lambda":(List definitions):body:[]))]))] = 
+    eval env (List (Atom "lambda":(List definitions):body:[])) >>= (\loofsloofs -> case loofsloofs of { erro@(Error _) -> return erro; otherwise -> defineVar env id (MakeClosure loofsloofs env)})
 define env [(Atom id), val] = defineVar env id val
 define env [(List [Atom id]), val] = defineVar env id val 
-define env [List ((Atom id):formals), body] = eval env (List (Atom "define":(Atom id):[(List (Atom "lambda":(List formals):body:[]))]))
+define env [List ((Atom id):definitions), body] = eval env (List (Atom "define":(Atom id):[(List (Atom "lambda":(List definitions):body:[]))]))
 define env args = return (Error "wrong number of arguments")
+defineVar env id (MakeClosure a b) =
+  ST (\s -> let (ST f)    = eval b a
+                (result, newState) = f s
+            in (result, (insert id (MakeClosure result newState) newState))
+     )
 defineVar env id val = 
   ST (\s -> let (ST f)    = eval env val
                 (result, newState) = f s
             in (result, (insert id result newState))
      )
 
-
 lett :: StateT -> [LispVal] -> StateTransformer LispVal
-lett env [(List (Atom "let": (List(definitions)): body:[]))] = 
-  (defineLet env definitions) >> (eval env body)
-              >>= (\v -> case v of { (error@(Error _)) -> return error; otherwise -> (deleteLet env definitions v) })
+lett env [(List (Atom "let": (List(definitions)): body:[]))] = do
+    let val = (defineLet env definitions) >> (eval env body) >>= (\x -> deleteLet env definitions x)
+    let (a,b) = getResult val;
+    mergeState val (return a) env; 
 
 defineLet :: StateT -> [LispVal] -> StateTransformer LispVal
 defineLet env [(List ([(Atom id), val]))] = defineVar env id val
@@ -109,11 +116,16 @@ deleteLet env [(List ([(Atom id), val]))] st = deleteVar env id st
 deleteLet env ((List ([(Atom id), val])):as) st = (deleteVar env id st) >> (deleteLet env as st)
 deleteLet env a st = return (Error "Invalid parameters!")
 deleteVar env id st =
-  ST (\s -> let (ST f)    = eval env st
+  ST (\s -> let (ST f) = eval env st
                 (result, newState) = f s
             in (result, (delete id newState))
-     )  
+     ) 
 
+mergeState :: StateTransformer LispVal -> StateTransformer LispVal -> StateT -> StateTransformer LispVal
+mergeState (ST f) (ST g) env = ST (\s -> let (v, newS) = f env
+                                             (v2, newS2) = g env
+                                          in  (v, union s (difference newS newS2))
+                                  )
 
 -- The maybe function yields a value of type b if the evaluation of 
 -- its third argument yields Nothing. In case it yields Just x, maybe
@@ -126,6 +138,14 @@ apply env func args =
                       otherwise -> 
                         (stateLookup env func >>= \res -> 
                           case res of 
+                            (MakeClosure (List (Atom "lambda" : List formals : body:l)) b) -> do -- se eu só avaliasse, ele iria juntar o estado real atual com esse b, ai ia dar merda
+                                let thisState@(ST f) = lambda b formals body args
+                                let (val, state) = getResult thisState
+                                let (r, alterB) = f b
+                                ST ( \parameters -> (val, (insert func (MakeClosure (List (Atom "lambda" : List formals : body:l)) alterB) (union parameters env))) 
+                                   )
+
+
                             List (Atom "lambda" : List formals : body:l) -> lambda env formals body args                              
                             otherwise -> return (Error "not a function.")
                         )

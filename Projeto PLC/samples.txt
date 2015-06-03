@@ -10,3 +10,5 @@
 "(begin (eqv? '(2 3 . 5)  '(2 3 . 6)))"
 "(begin (define x 12) (set! x (+ x 1)))"
 "(begin (let ((x 2)) (+ 1 x)))"
+"(begin (let ((x 2)) (begin (define y 5) (+ y 1))))"
+"(begin (let ((i 1)) (define f (make-closure (lambda (y) (begin (set! i (+ i y)) i) )))) (define val1 (f 1)) (define val2 (f 2)) (+ val1 val2) )"
