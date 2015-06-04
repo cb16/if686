@@ -144,9 +144,12 @@ apply env func args =
                                 let (r, alterB) = f b
                                 ST ( \parameters -> (val, (insert func (MakeClosure (List (Atom "lambda" : List formals : body:l)) alterB) (union parameters env))) 
                                    )
-
-
-                            List (Atom "lambda" : List formals : body:l) -> lambda env formals body args                              
+                            List (Atom "lambda" : List formals : body:l) -> do
+                                let lifslifs = (union (insert func res env) environment)
+                                let estado@(ST f) = (lambda lifslifs formals body args)
+                                let (a,b) = getResult estado
+                                return a
+                            --lambda env formals body args                              
                             otherwise -> return (Error "not a function.")
                         )
  
@@ -155,10 +158,12 @@ apply env func args =
 -- kind of dynamic variable (parameter) scoping that does not even support
 -- recursion. This has to be fixed in the project.
 lambda :: StateT -> [LispVal] -> LispVal -> [LispVal] -> StateTransformer LispVal
-lambda env formals body args = 
+lambda env formals body args = do
   let dynEnv = Prelude.foldr (\(Atom f, a) m -> Map.insert f a m) env (zip formals args)
-  in  eval dynEnv body
-
+  ST $ (\s -> let (ST f) = eval dynEnv body
+                  (result, newState) = f s
+              in (result, (difference newState environment))
+       )
 
 -- Initial environment of the programs. Maps identifiers to values. 
 -- Initially, maps function names to function values, but there's 
