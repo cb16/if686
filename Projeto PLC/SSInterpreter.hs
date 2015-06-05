@@ -32,6 +32,7 @@ module Main where
 import System.Environment
 import Control.Monad
 import Data.Map as Map
+import Debug.Trace as Trace
 import LispVal
 import SSParser
 import SSPrettyPrinter
@@ -57,7 +58,7 @@ eval env iff@(List (Atom "if":condition:consequent:alternate:[])) =
       otherwise -> return (Error "Not a boolean expression!"))
 eval env lam@(List (Atom "lambda":(List formals):body:[])) = return lam
 eval env stuff@(List (Atom "set!":(Atom variable):(a):[])) = (stateLookup env variable) >>= (\v -> case v of { (error@(Error _)) -> return error; otherwise -> (define env ([Atom variable]++[a])) })
-eval env letFunction@(List (Atom "let":(List bindings):body:[])) = lett env [letFunction]
+eval env letFunction@(List (Atom "let":(List definitions):body:[])) = lett env [letFunction]
 -- The following line is slightly more complex because we are addressing the
 -- case where define is redefined by the user (whatever is the user's reason 
 -- for doing so. The problem is that redefining define does not have
@@ -83,8 +84,9 @@ stateLookup env var = ST $
 -- not talking about local definitions. That's a completely different
 -- beast.
 define :: StateT -> [LispVal] -> StateTransformer LispVal
-define env [(Atom id), (List ([(Atom "make-closure"), (List (Atom "lambda":(List definitions):body:[]))]))] = 
+define env [(Atom id), (List ([(Atom "make-closure"), (List (Atom "lambda":(List definitions):body:[]))]))] =   
     eval env (List (Atom "lambda":(List definitions):body:[])) >>= (\loofsloofs -> case loofsloofs of { erro@(Error _) -> return erro; otherwise -> defineVar env id (MakeClosure loofsloofs env)})
+    --defineVar env id (MakeClosure (List (Atom "lambda":(List definitions):body:[])) env)
 define env [(Atom id), val] = defineVar env id val
 define env [(List [Atom id]), val] = defineVar env id val 
 define env [List ((Atom id):definitions), body] = eval env (List (Atom "define":(Atom id):[(List (Atom "lambda":(List definitions):body:[]))]))
@@ -104,7 +106,8 @@ lett :: StateT -> [LispVal] -> StateTransformer LispVal
 lett env [(List (Atom "let": (List(definitions)): body:[]))] = do
     let val = (defineLet env definitions) >> (eval env body) >>= (\x -> deleteLet env definitions x)
     let (a,b) = getResult val;
-    mergeState val (return a) env; 
+    mergeState val (return a) env; -- em val tem quaisquer variaveis que forem definidas em let
+                                   -- em a tem o valor calculado no let 
 
 defineLet :: StateT -> [LispVal] -> StateTransformer LispVal
 defineLet env [(List ([(Atom id), val]))] = defineVar env id val
@@ -122,8 +125,8 @@ deleteVar env id st =
      ) 
 
 mergeState :: StateTransformer LispVal -> StateTransformer LispVal -> StateT -> StateTransformer LispVal
-mergeState (ST f) (ST g) env = ST (\s -> let (v, newS) = f env
-                                             (v2, newS2) = g env
+mergeState (ST f) (ST g) env = ST (\s -> let (v, newS) = f env -- v é o valor de val
+                                             (v2, newS2) = g env -- v2 é o valor de a que é igual ao valor de val
                                           in  (v, union s (difference newS newS2))
                                   )
 
@@ -141,8 +144,8 @@ apply env func args =
                             (MakeClosure (List (Atom "lambda" : List formals : body:l)) b) -> do -- se eu só avaliasse, ele iria juntar o estado real atual com esse b, ai ia dar merda
                                 let thisState@(ST f) = lambda b formals body args
                                 let (val, state) = getResult thisState
-                                let (r, alterB) = f b
-                                ST ( \parameters -> (val, (insert func (MakeClosure (List (Atom "lambda" : List formals : body:l)) alterB) (union parameters env))) 
+                                let (r, alterB) = (f b)
+                                ST ( \parameters -> (val, (insert func (MakeClosure (List (Atom "lambda" : List formals : body:l)) (union alterB environment)) parameters)) 
                                    )
                             List (Atom "lambda" : List formals : body:l) -> do
                                 let lifslifs = (union (insert func res env) environment)
@@ -150,7 +153,7 @@ apply env func args =
                                 let (a,b) = getResult estado
                                 return a
                             --lambda env formals body args                              
-                            otherwise -> return (Error "not a function.")
+                            otherwise -> return (Error ("not a function."++(show(func))))
                         )
  
 -- The lambda function is an auxiliary function responsible for
@@ -352,7 +355,7 @@ unpackList (List list) = list
 
 cons :: [LispVal] -> LispVal
 cons par@(a:list:[]) | (isList list) = List ([a] ++ (unpackList list))
-                     | otherwise = Error "Invalid parameters!"
+                            | otherwise = Error "Invalid parameters!"
 cons a = Error "Invalid parameters!"
 
 compareList :: [LispVal] -> [LispVal] -> LispVal
