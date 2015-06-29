@@ -49,6 +49,13 @@ eval env (List [Atom "quote", val]) = return val
 eval env (List (Atom "begin":[v])) = eval env v
 eval env (List (Atom "begin": l: ls)) = (eval env l) >>= (\v -> case v of { (error@(Error _)) -> return error; otherwise -> eval env (List (Atom "begin": ls))})
 eval env (List (Atom "begin":[])) = return (List [])  
+eval env iff@(List (Atom "if":condition:consequent:[])) = 
+    eval env condition 
+    >>= (\x -> case x of
+      (Bool True) -> eval env consequent
+      (Bool False) -> return (List [])
+      erro@(Error msg) -> return erro
+      otherwise -> return (Error "Not a boolean expression!"))
 eval env iff@(List (Atom "if":condition:consequent:alternate:[])) = 
     eval env condition 
     >>= (\x -> case x of
